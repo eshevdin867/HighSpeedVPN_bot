@@ -1,0 +1,111 @@
+from aiogram import Router
+from aiogram.types import Message, CallbackQuery
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+
+from config import ADMIN_ID
+from database.db import get_all_users
+from states.admin import AdminState
+
+
+router = Router()
+
+
+@router.message(Command("admin"))
+async def admin_panel(message: Message):
+
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    await message.answer(
+        """
+🛠 Админ-панель
+
+Команды:
+
+📢 /broadcast - сделать рассылку
+
+👥 /users - количество пользователей
+"""
+    )
+
+
+
+@router.message(Command("users"))
+async def users_count(message: Message):
+
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    users = await get_all_users()
+
+    await message.answer(
+        f"👥 Пользователей: {len(users)}"
+    )
+
+
+
+@router.message(Command("broadcast"))
+async def broadcast_start(
+        message: Message,
+        state: FSMContext
+):
+
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    await state.set_state(
+        AdminState.waiting_broadcast
+    )
+
+    await message.answer(
+        "📢 Введите текст рассылки:"
+    )
+
+
+
+@router.message(AdminState.waiting_broadcast)
+async def send_broadcast(
+        message: Message,
+        state: FSMContext
+):
+
+    if message.from_user.id != ADMIN_ID:
+        return
+
+
+    users = await get_all_users()
+
+    success = 0
+    failed = 0
+
+
+    for user_id in users:
+
+        try:
+
+            await message.bot.send_message(
+                user_id,
+                message.text
+            )
+
+            success += 1
+
+
+        except Exception:
+
+            failed += 1
+
+
+    await message.answer(
+        f"""
+📢 Рассылка завершена.
+
+✅ Отправлено: {success}
+
+❌ Ошибок: {failed}
+"""
+    )
+
+
+    await state.clear()
