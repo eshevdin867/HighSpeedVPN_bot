@@ -5,10 +5,10 @@ def main_menu():
 
     builder = InlineKeyboardBuilder()
 
-    #builder.button(
-    #        text="🛒 Купить VPN",
-    #        callback_data="buy_vpn"
-    #)
+    builder.button(
+            text="🛒 Купить VPN",
+            callback_data="buy_vpn"
+    )
 
     builder.button(
         text="📢 Последние новости",
